@@ -80,7 +80,7 @@ export class HttpHandler {
             this.corkMiddleware,
             this.corsMiddleware,
         ]).then(res => {
-            this.send(res, 'OK');
+            this.send(res, 'Hello MF !! from pinger-keti jingling at 6001');
         });
     }
 
