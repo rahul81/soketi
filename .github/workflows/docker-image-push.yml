@@ -1,0 +1,27 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      env:
+        DOCKER_USER: ${{secrets.DOCKER_REGISTRY_USERNAME}}
+        DOCKER_PASSWORD: ${{secrets.DOCKER_REGISTRY_TOKEN}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD 
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag xander81/pinger-keti:$(date +%s)
+      
+    - name: Docker Push
+      run: docker push xander81/pinger-keti
