@@ -35,7 +35,7 @@ export class HttpHandler {
             if (this.server.closing) {
                 this.serverErrorResponse(res, 'The server is closing. Choose another server. :)');
             } else {
-                this.send(res, 'OK');
+                this.send(res, 'Hello MF !! from pinger-keti jingling at 6001');
             }
         });
     }
