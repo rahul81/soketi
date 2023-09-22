@@ -50,11 +50,11 @@ jobs:
           chmod 600 key.pem
       - name: Pull Docker image
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.SOCKETI_INSTANCE_IP }} 'sudo docker pull xander81/pinger-keti:latest'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-54-160-189-158.compute-1.amazonaws.com 'sudo docker pull xander81/pinger-keti:latest'
       - name: Stop running container
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.SOCKETI_INSTANCE_IP }} 'sudo docker stop pinger-keti || true'
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.SOCKETI_INSTANCE_IP }} 'sudo docker rm pinger-keti || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-54-160-189-158.compute-1.amazonaws.com 'sudo docker stop pinger-keti || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-54-160-189-158.compute-1.amazonaws.com 'sudo docker rm pinger-keti || true'
       - name: Run new container
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.SOCKETI_INSTANCE_IP }} 'sudo docker run -d --name pinger-keti -p 6001:6001 xander81/pinger-keti:latest'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-54-160-189-158.compute-1.amazonaws.com 'sudo docker run -d --name pinger-keti -p 6001:6001 xander81/pinger-keti:latest'
