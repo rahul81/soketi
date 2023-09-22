@@ -273,6 +273,7 @@ export class HttpHandler {
             this.broadcastEventRateLimitingMiddleware,
         ]).then(res => {
             this.checkMessageToBroadcast(res.body as PusherApiMessage, res.app as App).then(message => {
+                // intercept on event messages here
                 this.broadcastMessage(message, res.app.id);
                 this.server.metricsManager.markApiMessage(res.app.id, res.body, { ok: true });
                 this.sendJson(res, { ok: true });
