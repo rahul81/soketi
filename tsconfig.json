@@ -3,6 +3,7 @@
     "allowSyntheticDefaultImports": true,
     "module": "commonjs",
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "outDir": "./dist",
     "sourceMap": false,
     "target": "es2019",

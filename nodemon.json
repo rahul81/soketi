@@ -1,0 +1,4 @@
+{
+    "watch":["./dist"],
+    "exec": "node ./bin/server.js start"
+}
