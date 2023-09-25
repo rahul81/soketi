@@ -3,7 +3,15 @@ import { Log } from '../log';
 import { PresenceMemberInfo } from '../channels/presence-channel-manager';
 import { v4 as uuidv4 } from 'uuid';
 import { WebSocket } from 'uWebSockets.js';
+import { AdapterInterface } from './adapter-interface';
+// @ts-ignore bull has default export
+import _Queue from "bull";
+import { Worker, QueueEvents } from 'bullmq';
+// import Bull from "bull/index.d";
 
+// export const Queue = _Queue as typeof Bull;
+
+// const queue: Bull.Queue<any> = new Queue("image transcoding");
 /**
  *                                          |-----> NODE1 ----> SEEKS DATA (ONREQUEST) ----> SEND TO THE NODE0 ---> NODE0 (ONRESPONSE) APPENDS DATA TO REQUEST OBJECT
  *                                          |
@@ -235,6 +243,31 @@ export abstract class HorizontalAdapter extends LocalAdapter {
      */
     protected abstract getNumSub(): Promise<number>;
 
+    protected queue: _Queue.Queue;
+    protected receiverQueue: _Queue.Queue;
+    protected queueWorker : Worker;
+    protected queueEvents: QueueEvents;
+
+    async init(): Promise<AdapterInterface> {
+        this.queue = new _Queue("send-queue",'redis://127.0.0.1:6379',{});
+    
+        // this.receiverQueue = _Queue(
+        //     'processed-queue','redis://127.0.0.1:6379',{});
+            
+        this.queueWorker = new Worker('processed-queue', async (job) => {
+            console.log("Retrived transformed messages from >> processed-queue")
+            const { data } = job
+
+            const { metaData, messageData} = data
+            const { appId, channel, exceptingId } = metaData
+
+            this.sendToChannels(appId, channel, JSON.stringify(messageData), exceptingId)
+
+            await job.isCompleted()
+            
+        });
+        return this
+    }
     /**
      * Send a response through the response channel.
      */
@@ -253,6 +286,20 @@ export abstract class HorizontalAdapter extends LocalAdapter {
      * Send a message to a namespace and channel.
      */
     send(appId: string, channel: string, data: string, exceptingId: string|null = null): any {
+        // Intercept message here
+        // temporal > for making sure each step execute
+        console.log("\nIntercepted message >> \n", JSON.parse(data))
+        const newData =  { metaData: {appId, channel, exceptingId}, data:JSON.parse(data)}
+
+        this.queue.add("process-message", newData)
+        console.log("Applying custom transformation on message...")
+        console.log("Added message to message queue >> process-message\n")
+    }
+
+    sendToChannels(appId: string, channel: string, data: string, exceptingId: string|null = null) {
+
+        console.log("Transformed message >> \n", JSON.parse(data))
+        console.log("Broadcasting to channels ******** It worked!!!!!!!!")
         this.broadcastToChannel(this.channel, JSON.stringify({
             uuid: this.uuid,
             appId,
