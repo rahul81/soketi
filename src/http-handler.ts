@@ -376,6 +376,7 @@ export class HttpHandler {
     }
 
     protected broadcastMessage(message: PusherApiMessage, appId: string): void {
+        console.log("App id from http handler >> ", appId)
         message.channels.forEach(channel => {
             let msg = {
                 event: message.name,
