@@ -57,5 +57,4 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@ec2-54-160-189-158.compute-1.amazonaws.com 'sudo docker rm pinger-keti || true'
       - name: Run new container
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@ec2-54-160-189-158.compute-1.amazonaws.com 'sudo docker run -d --name pinger-keti -p 6001:6001 xander81/pinger-keti:latest --env-file ~/.env'
-
+          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@ec2-54-160-189-158.compute-1.amazonaws.com 'sudo docker run -d --env-file ~/env.list --name pinger-keti -p 6001:6001 xander81/pinger-keti:latest'
