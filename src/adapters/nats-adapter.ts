@@ -48,6 +48,7 @@ export class NatsAdapter extends HorizontalAdapter {
      * Initialize the adapter.
      */
     async init(): Promise<AdapterInterface> {
+        await super.init();
         return new Promise(resolve => {
             connect({
                 servers: this.server.options.adapter.nats.servers,

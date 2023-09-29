@@ -727,6 +727,7 @@ export class WsHandler {
      * Use the app manager to retrieve a valid app.
      */
     protected checkForValidApp(ws: WebSocket): Promise<App|null> {
+        console.log("Checking for valid app from ws handler >> ", ws.appKey)
         return this.server.appManager.findByKey(ws.appKey);
     }
 

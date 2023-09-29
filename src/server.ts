@@ -64,9 +64,9 @@ export class Server {
             array: {
                 apps: [
                     {
-                        id: 'app-id',
-                        key: 'app-key',
-                        secret: 'app-secret',
+                        id: 'pinger-chat',
+                        key: 'app-key-1',
+                        secret: 'app-secret-1',
                         maxConnections: -1,
                         enableClientMessages: false,
                         enabled: true,
@@ -75,6 +75,18 @@ export class Server {
                         maxReadRequestsPerSecond: -1,
                         webhooks: [],
                     },
+                    {
+                        id: 'pinger-flow',
+                        key: 'app-key-2',
+                        secret: 'app-secret-2',
+                        maxConnections: -1,
+                        enableClientMessages: false,
+                        enabled: true,
+                        maxBackendEventsPerSecond: -1,
+                        maxClientEventsPerSecond: -1,
+                        maxReadRequestsPerSecond: -1,
+                        webhooks: [],
+                    }
                 ],
             },
             dynamodb: {

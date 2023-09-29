@@ -27,6 +27,7 @@
     "aws-sdk": "^2.1426.0",
     "axios": "^0.27.2",
     "boolean": "^3.1.4",
+    "bull": "^4.11.3",
     "bullmq": "^1.80.3",
     "colors": "1.4.0",
     "dot-wild": "^3.0.1",
@@ -82,7 +83,8 @@
     "prepublish": "npm run build",
     "test": "jest --detectOpenHandles --forceExit --silent",
     "test:local": "jest --detectOpenHandles --forceExit --verbose",
-    "test:watch": "npm test -- --watch"
+    "test:watch": "npm test -- --watch",
+    "start": "node ./bin/server.js start"
   },
   "bin": {
     "soketi": "bin/server.js",
