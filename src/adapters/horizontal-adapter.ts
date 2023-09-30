@@ -262,12 +262,12 @@ export abstract class HorizontalAdapter extends LocalAdapter {
             const worker = new Worker(queueName, async job => {
               // Process the job data here
             console.log("Retrived transformed messages from >> ", queueName)
-            const { data } = job
+            const { data: jobData } = job
 
-            const { metaData, messageData} = data
+            const { metaData, data} = jobData
             const { appId, channel, exceptingId } = metaData
 
-            this.sendToChannels(appId, channel, JSON.stringify(messageData), exceptingId)
+            this.sendToChannels(appId, channel, JSON.stringify(data), exceptingId)
 
             await job.isCompleted()
             }, {connection:{ host:process.env['REDIS_HOST'], port:parseInt(process.env['REDIS_PORT'])} });
