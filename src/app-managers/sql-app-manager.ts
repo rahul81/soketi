@@ -23,6 +23,7 @@ export abstract class SqlAppManager extends BaseAppManager {
             connection: this.knexConnectionDetails(),
             version: this.knexVersion(),
         };
+        console.log("Knex config >> ", knexConfig)
 
         if (this.supportsPooling() && server.options.databasePooling.enabled) {
             knexConfig = {
