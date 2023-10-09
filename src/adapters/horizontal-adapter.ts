@@ -253,10 +253,14 @@ export abstract class HorizontalAdapter extends LocalAdapter {
 
     async init(): Promise<AdapterInterface> {
 
+        const NUM_QUEUES = 10;
+
         this.redisClient = new Redis({ host:process.env['REDIS_HOST'] || '127.0.0.1', port: parseInt(process.env['REDIS_PORT'] || '6379') })
-        this.queueNames = ['queue1', 'queue2', 'queue3', 'queue4', 'queue5', 'queue6', 'queue7', 'queue8', 'queue9', 'queue10']
-        this.processedQueueNames = ['processed-queue1', 'processed-queue2', 'processed-queue3', 'processed-queue4', 'processed-queue5', 'processed-queue6', 'processed-queue7', 'processed-queue8', 'processed-queue9', 'processed-queue10']
-        this.queues = this.queueNames.map(queueName => new Queue(queueName, {connection:{host:process.env['REDIS_HOST'], port:parseInt(process.env['REDIS_PORT'])  }}));
+        this.queueNames = new Array(NUM_QUEUES).map((v, i) => `queue${i+1}` )
+        this.processedQueueNames = new Array(NUM_QUEUES).map((v, i) => `processed-queue${i+1}` )
+        
+        
+        this.queues = this.queueNames.map(queueName => new Queue(queueName, {connection:{host:process.env['REDIS_HOST'] || '127.0.0.1', port:parseInt(process.env['REDIS_PORT'] || '6379')  }}));
 
         this.queueWorkerList = this.processedQueueNames.map(queueName => {
             const worker = new Worker(queueName, async job => {
