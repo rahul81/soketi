@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { WebhookSender } from './webhook-sender';
 import { WebSocket } from 'uWebSockets.js';
 import { WsHandler } from './ws-handler';
+import path from 'path';
 
 const Discover = require('node-discover');
 const queryString = require('query-string');
@@ -56,37 +57,14 @@ export class Server {
             },
         },
         appManager: {
-            driver: 'array',
+            driver: 'postgres',
             cache: {
                 enabled: false,
                 ttl: -1,
             },
             array: {
                 apps: [
-                    {
-                        id: 'pinger-chat',
-                        key: 'app-key-1',
-                        secret: 'app-secret-1',
-                        maxConnections: -1,
-                        enableClientMessages: false,
-                        enabled: true,
-                        maxBackendEventsPerSecond: -1,
-                        maxClientEventsPerSecond: -1,
-                        maxReadRequestsPerSecond: -1,
-                        webhooks: [],
-                    },
-                    {
-                        id: 'pinger-flow',
-                        key: 'app-key-2',
-                        secret: 'app-secret-2',
-                        maxConnections: -1,
-                        enableClientMessages: false,
-                        enabled: true,
-                        maxBackendEventsPerSecond: -1,
-                        maxClientEventsPerSecond: -1,
-                        maxReadRequestsPerSecond: -1,
-                        webhooks: [],
-                    }
+                    
                 ],
             },
             dynamodb: {
@@ -101,7 +79,7 @@ export class Server {
             },
             postgres: {
                 table: 'apps',
-                version: '13.3',
+                version: '16.0',
             },
         },
         cache: {
@@ -155,11 +133,15 @@ export class Server {
                 database: 'main',
             },
             postgres: {
-                host: '127.0.0.1',
+                host: 'pinger-db.c1ibjtxnzk2q.us-east-1.rds.amazonaws.com',
                 port: 5432,
                 user: 'postgres',
-                password: 'password',
-                database: 'main',
+                password: '12345678',
+                database: 'pingerchips',
+                ssl: {
+                    ca: require('fs').readFileSync(path.resolve(__dirname + '../../../keys/us-east-1-bundle.pem')),
+                    maxVersion: 'TLSv1.2',
+                }
             },
             redis: {
                 host: '127.0.0.1',
