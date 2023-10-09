@@ -253,7 +253,7 @@ export abstract class HorizontalAdapter extends LocalAdapter {
 
     async init(): Promise<AdapterInterface> {
 
-        // this.redisClient = new Redis({ host:process.env['REDIS_HOST'] || '127.0.0.1', port: parseInt(process.env['REDIS_PORT']) || 6379 })
+        this.redisClient = new Redis({ host:process.env['REDIS_HOST'] || '127.0.0.1', port: parseInt(process.env['REDIS_PORT'] || '6379') })
         this.queueNames = ['queue1', 'queue2', 'queue3', 'queue4', 'queue5', 'queue6', 'queue7', 'queue8', 'queue9', 'queue10']
         this.processedQueueNames = ['processed-queue1', 'processed-queue2', 'processed-queue3', 'processed-queue4', 'processed-queue5', 'processed-queue6', 'processed-queue7', 'processed-queue8', 'processed-queue9', 'processed-queue10']
         this.queues = this.queueNames.map(queueName => new Queue(queueName, {connection:{host:process.env['REDIS_HOST'], port:parseInt(process.env['REDIS_PORT'])  }}));
@@ -263,8 +263,9 @@ export abstract class HorizontalAdapter extends LocalAdapter {
               // Process the job data here
             console.log("Retrived transformed messages from >> ", queueName)
             const { data } = job
+            console.log("Transformed message >> \n", data)
 
-            const { metaData, messageData} = data
+            const { metaData, data:messageData} = data
             const { appId, channel, exceptingId } = metaData
 
             this.sendToChannels(appId, channel, JSON.stringify(messageData), exceptingId)
@@ -313,16 +314,34 @@ export abstract class HorizontalAdapter extends LocalAdapter {
     send(appId: string, channel: string, data: string, exceptingId: string|null = null): any {
         // Intercept message here
         console.log("\nIntercepted message >> \n", JSON.parse(data))
-        const newData =  { metaData: {appId, channel, exceptingId}, data:JSON.parse(data)}
+        
+        const keyToCheck = `queue_processor:${appId}`;
+        
+        (async () => {
+            try {
+                const exists = await this.redisClient.sismember(keyToCheck, channel);
+                console.log("dtype >> ", typeof exists)
+                
+                if (exists === 1) {
+                    console.log(`Key "${keyToCheck}" exists in Redis.`);
+                    const newData =  { metaData: {appId, channel, exceptingId}, data:JSON.parse(data)}
+                    this.distributeMessageToQueues(newData)
+                    console.log("Applying custom transformation on message...")
 
-        this.distributeMessageToQueues(newData)
-        console.log("Applying custom transformation on message...")
+              } else {
+                console.log(`Key "${keyToCheck}" does not exist in Redis.`);
+                this.sendToChannels(appId, channel, data, exceptingId)
+              }
+            } catch (error) {
+              console.error('Error checking key existence:', error);
+            } 
+          })();
+
     }
 
     sendToChannels(appId: string, channel: string, data: string, exceptingId: string|null = null) {
 
-        console.log("Transformed message >> \n", JSON.parse(data))
-        console.log("Broadcasting to channels ******** It worked!!!!!!!!")
+        console.log("Broadcasting to channels ******** It works!!!!!!!!")
         this.broadcastToChannel(this.channel, JSON.stringify({
             uuid: this.uuid,
             appId,
