@@ -256,8 +256,8 @@ export abstract class HorizontalAdapter extends LocalAdapter {
         const NUM_QUEUES = 10;
 
         this.redisClient = new Redis({ host:process.env['REDIS_HOST'] || '127.0.0.1', port: parseInt(process.env['REDIS_PORT'] || '6379') })
-        this.queueNames = new Array(NUM_QUEUES).map((v, i) => `queue${i+1}` )
-        this.processedQueueNames = new Array(NUM_QUEUES).map((v, i) => `processed-queue${i+1}` )
+        this.queueNames = Array.from({ length: NUM_QUEUES }, (_, i) => `queue${i + 1}`);
+        this.processedQueueNames = Array.from({ length: NUM_QUEUES }, (_, i) => `processed-queue${i + 1}`);
         
         
         this.queues = this.queueNames.map(queueName => new Queue(queueName, {connection:{host:process.env['REDIS_HOST'] || '127.0.0.1', port:parseInt(process.env['REDIS_PORT'] || '6379')  }}));
