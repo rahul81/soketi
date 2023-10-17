@@ -30,7 +30,7 @@ export class Server {
      */
     public options: Options = {
         adapter: {
-            driver: 'local',
+            driver: 'redis',
             redis: {
                 requestsTimeout: 5_000,
                 prefix: '',
