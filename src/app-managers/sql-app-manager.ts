@@ -1,8 +1,8 @@
-import { App } from './../app';
-import { BaseAppManager } from './base-app-manager';
-import { Log } from '../log';
-import { Knex, knex } from 'knex';
-import { Server } from './../server';
+import { Knex, knex } from "knex";
+import { Log } from "../log";
+import { App } from "./../app";
+import { Server } from "./../server";
+import { BaseAppManager } from "./base-app-manager";
 
 export abstract class SqlAppManager extends BaseAppManager {
     /**
@@ -23,7 +23,7 @@ export abstract class SqlAppManager extends BaseAppManager {
             connection: this.knexConnectionDetails(),
             version: this.knexVersion(),
         };
-        console.log("Knex config >> ", knexConfig)
+        console.log("Knex config >> ", knexConfig);
 
         if (this.supportsPooling() && server.options.databasePooling.enabled) {
             knexConfig = {
@@ -43,8 +43,8 @@ export abstract class SqlAppManager extends BaseAppManager {
     /**
      * Find an app by given ID.
      */
-    findById(id: string): Promise<App|null> {
-        return this.selectById(id).then(apps => {
+    findById(id: string): Promise<App | null> {
+        return this.selectById(id).then((apps) => {
             if (apps.length === 0) {
                 if (this.server.options.debug) {
                     Log.error(`App ID not found: ${id}`);
@@ -60,8 +60,8 @@ export abstract class SqlAppManager extends BaseAppManager {
     /**
      * Find an app by given key.
      */
-    findByKey(key: string): Promise<App|null> {
-        return this.selectByKey(key).then(apps => {
+    findByKey(key: string): Promise<App | null> {
+        return this.selectByKey(key).then((apps) => {
             if (apps.length === 0) {
                 if (this.server.options.debug) {
                     Log.error(`App key not found: ${key}`);
@@ -79,8 +79,9 @@ export abstract class SqlAppManager extends BaseAppManager {
      */
     protected selectById(id: string): Promise<App[]> {
         return this.connection<App>(this.appsTableName())
-            .where('id', id)
-            .select('*');
+            .where("id", id)
+            .whereNull("deleted_at")
+            .select("*");
     }
 
     /**
@@ -88,8 +89,9 @@ export abstract class SqlAppManager extends BaseAppManager {
      */
     protected selectByKey(key: string): Promise<App[]> {
         return this.connection<App>(this.appsTableName())
-            .where('key', key)
-            .select('*');
+            .where("key", key)
+            .whereNull("deleted_at")
+            .select("*");
     }
 
     /**
@@ -100,7 +102,7 @@ export abstract class SqlAppManager extends BaseAppManager {
     /**
      * Get the object connection details for Knex.
      */
-    protected abstract knexConnectionDetails(): { [key: string]: any; };
+    protected abstract knexConnectionDetails(): { [key: string]: any };
 
     /**
      * Get the connection version for Knex.
