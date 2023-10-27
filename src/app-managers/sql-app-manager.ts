@@ -1,4 +1,5 @@
 import { Knex, knex } from "knex";
+import { Flow } from "../flow-engine";
 import { Log } from "../log";
 import { App } from "./../app";
 import { Server } from "./../server";
@@ -92,6 +93,27 @@ export abstract class SqlAppManager extends BaseAppManager {
             .where("key", key)
             .whereNull("deleted_at")
             .select("*");
+    }
+
+    /**
+     * Get flows for the given app ID.
+     */
+    selectFlowsByAppId(appId: string, channel: string): Promise<any[]> {
+        return this.connection<Flow>("flows")
+            .where("appId", appId)
+            .andWhere("active", true)
+            .andWhere("channel", channel)
+            .whereNull("deleted_at")
+            .select("*");
+    }
+
+    async generateFlowKeys() {
+        return await this.connection.raw(`
+            SELECT "appId",
+                ARRAY_AGG(CHANNEL) CHANNELS
+            FROM flows
+            GROUP BY "appId";
+        `);
     }
 
     /**

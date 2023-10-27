@@ -1,5 +1,6 @@
 import * as dot from "dot-wild";
 import path from "path";
+import { EventEmitter } from "stream";
 import {
     HttpRequest,
     HttpResponse,
@@ -322,6 +323,11 @@ export class Server {
      * The Discover instance.
      */
     public discover: typeof Discover;
+
+    /**
+     * event emitter
+     */
+    public emitter: EventEmitter = new EventEmitter();
 
     /**
      * Initialize the server.
