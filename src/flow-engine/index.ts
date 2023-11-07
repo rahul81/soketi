@@ -7,6 +7,27 @@ import { FilterNode } from "./nodes/filter-node";
 import { TransformNode } from "./nodes/transform-node";
 import Message from "./types";
 
+export interface FlowStep {
+    type: string;
+    data: any;
+}
+
+export interface FlowEdge {
+    from: string;
+    to: string;
+}
+
+export interface FlowSpec {
+    steps: {
+        type: string;
+        data: any;
+    }[];
+    edges: {
+        from: string;
+        to: string;
+    }[];
+}
+
 export interface Flow {
     id: string;
     appId: string;
@@ -15,6 +36,10 @@ export interface Flow {
         steps: {
             type: string;
             data: any;
+        }[];
+        edges: {
+            from: string;
+            to: string;
         }[];
     };
     active: boolean;
@@ -135,7 +160,7 @@ export class FlowExecutor {
                     `queue_processor:flow:${metaData.appId}:${metaData.channel}`,
                     JSON.stringify(flow),
                     "EX",
-                    60 * 60 * 24
+                    60 * 60 * 12
                 );
             }
         }

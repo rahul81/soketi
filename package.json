@@ -86,7 +86,8 @@
     "test": "jest --detectOpenHandles --forceExit --silent",
     "test:local": "jest --detectOpenHandles --forceExit --verbose",
     "test:watch": "npm test -- --watch",
-    "start": "node ./bin/server.js start"
+    "start": "node ./bin/server.js start",
+    "dev": "concurrently \"npm run build:watch\"  \"npm run start\""
   },
   "bin": {
     "soketi": "bin/server.js",
