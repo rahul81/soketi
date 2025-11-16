@@ -73,7 +73,7 @@ export class LocalAdapter implements AdapterInterface {
      * Remove a socket ID from the channel identifier.
      * Return the total number of connections remaining to the channel.
      */
-    async removeFromChannel(appId: string, channel: string|string[], wsId: string): Promise<number|void> {
+    async removeFromChannel(appId: string, channel: string | string[], wsId: string): Promise<number | void> {
         return this.getNamespace(appId).removeFromChannel(wsId, channel).then((remainingConnections) => {
             if (!Array.isArray(channel)) {
                 return this.getChannelSocketsCount(appId, channel);
@@ -155,40 +155,39 @@ export class LocalAdapter implements AdapterInterface {
     /**
      * Send a message to a namespace and channel.
      */
-    send(appId: string, channel: string, data: string, exceptingId: string|null = null): any {
+    async send(appId: string, channel: string, data: string, exceptingId: string | null = null): Promise<any> {
         // For user-dedicated channels, intercept the .send() call and use custom logic.
         if (channel.indexOf('#server-to-user-') === 0) {
             let userId = channel.split('#server-to-user-').pop();
 
-            this.getUserSockets(appId, userId).then(sockets => {
-                sockets.forEach(ws => {
-                    if (ws.sendJson) {
-                        ws.sendJson(JSON.parse(data));
-                    }
-                });
+            const sockets = await this.getUserSockets(appId, userId)
+            sockets.forEach(ws => {
+                if (ws.sendJson) {
+                    ws.sendJson(JSON.parse(data));
+                }
             });
 
             return;
         }
 
-        this.getNamespace(appId).getChannelSockets(channel).then(sockets => {
-            sockets.forEach((ws) => {
-                if (exceptingId && exceptingId === ws.id) {
-                    return;
-                }
+        const sockets = await this.getNamespace(appId).getChannelSockets(channel);
+        sockets.forEach((ws) => {
+            if (exceptingId && exceptingId === ws.id) {
+                return;
+            }
 
-                // Fix race conditions.
-                if (ws.sendJson) {
-                    ws.sendJson(JSON.parse(data));
-                }
-            });
+            // Fix race conditions.
+            if (ws.sendJson) {
+                ws.sendJson(JSON.parse(data));
+            }
         });
+        return;
     }
 
     /**
      * Terminate an User ID's connections.
      */
-    terminateUserConnections(appId: string, userId: number|string): void {
+    terminateUserConnections(appId: string, userId: number | string): void {
         this.getNamespace(appId).terminateUserConnections(userId);
     }
 
@@ -209,7 +208,7 @@ export class LocalAdapter implements AdapterInterface {
     /**
      * Get the sockets associated with an user.
      */
-    getUserSockets(appId: string, userId: number|string): Promise<Set<WebSocket>> {
+    getUserSockets(appId: string, userId: number | string): Promise<Set<WebSocket>> {
         return this.getNamespace(appId).getUserSockets(userId);
     }
 
@@ -229,9 +228,9 @@ export class LocalAdapter implements AdapterInterface {
         return Promise.resolve();
     }
 
-     /**
-      * Clear all namespaces from the local adapter.
-      */
+    /**
+     * Clear all namespaces from the local adapter.
+     */
     clearNamespaces(): Promise<void> {
         this.namespaces = new Map<string, Namespace>();
 

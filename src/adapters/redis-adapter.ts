@@ -70,6 +70,7 @@ export class RedisAdapter extends HorizontalAdapter {
         this.pubClient.on('error', onError);
         this.subClient.on('error', onError);
 
+        super.init()
         return this;
     }
 

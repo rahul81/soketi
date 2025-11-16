@@ -18,6 +18,8 @@ export class ArrayAppManager extends BaseAppManager {
         return new Promise(resolve => {
             let app = this.server.options.appManager.array.apps.find(app => app.id == id);
 
+            console.log("App from array app manager >> ", app)
+
             if (typeof app !== 'undefined') {
                 resolve(new App(app, this.server));
             } else {

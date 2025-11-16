@@ -3,7 +3,16 @@ import { Log } from '../log';
 import { PresenceMemberInfo } from '../channels/presence-channel-manager';
 import { v4 as uuidv4 } from 'uuid';
 import { WebSocket } from 'uWebSockets.js';
+import { AdapterInterface } from './adapter-interface';
+// @ts-ignore bull has default export
+// import _Queue from "bull";
+import { Worker, QueueEvents, Queue } from 'bullmq';
+import { Redis } from 'ioredis';
+// import Bull from "bull/index.d";
 
+// export const Queue = _Queue as typeof Bull;
+
+// const queue: Bull.Queue<any> = new Queue("image transcoding");
 /**
  *                                          |-----> NODE1 ----> SEEKS DATA (ONREQUEST) ----> SEND TO THE NODE0 ---> NODE0 (ONRESPONSE) APPENDS DATA TO REQUEST OBJECT
  *                                          |
@@ -70,7 +79,7 @@ export interface PubsubBroadcastedMessage {
     appId: string;
     channel: string;
     data: any;
-    exceptingId?: string|null;
+    exceptingId?: string | null;
 }
 
 export abstract class HorizontalAdapter extends LocalAdapter {
@@ -235,6 +244,61 @@ export abstract class HorizontalAdapter extends LocalAdapter {
      */
     protected abstract getNumSub(): Promise<number>;
 
+    protected redisClient: Redis;
+    protected queueNames: string[];
+    protected processedQueueNames: string[];
+    protected queues: Queue[];
+    protected queueWorkerList: Worker[];
+
+
+    async init(): Promise<AdapterInterface> {
+
+        const NUM_QUEUES = 10;
+
+        this.redisClient = new Redis({ host: process.env['REDIS_HOST'] || '127.0.0.1', port: parseInt(process.env['REDIS_PORT'] || '6379') })
+        this.queueNames = Array.from({ length: NUM_QUEUES }, (_, i) => `queue${i + 1}`);
+        this.processedQueueNames = Array.from({ length: NUM_QUEUES }, (_, i) => `processed-queue${i + 1}`);
+
+
+        this.queues = this.queueNames.map(queueName => new Queue(queueName, { connection: { host: process.env['REDIS_HOST'] || '127.0.0.1', port: parseInt(process.env['REDIS_PORT'] || '6379') } }));
+
+        this.queueWorkerList = this.processedQueueNames.map(queueName => {
+            const worker = new Worker(queueName, async job => {
+                // Process the job data here
+                console.log("Retrived transformed messages from >> ", queueName)
+                const { data } = job
+                console.log("Transformed message >> \n", data)
+
+                const { metaData, data: messageData } = data
+                const { appId, channel, exceptingId } = metaData
+
+                this.sendToChannels(appId, channel, JSON.stringify(messageData), exceptingId)
+
+                await job.isCompleted()
+            }, { connection: { host: process.env['REDIS_HOST'], port: parseInt(process.env['REDIS_PORT']) } });
+
+            worker.on('completed', job => {
+                console.log(`Job completed in ${queueName}:`, job.data);
+            });
+
+            return worker;
+        });
+
+
+        return this
+    }
+
+    protected distributeMessageToQueues(message) {
+        // optimize index calc using hex of app id 
+        const index = JSON.stringify(message).length % this.queueNames.length;
+        const queueName = this.queueNames[index];
+        const queue = this.queues[index];
+
+        // Add the message to the selected queue
+        console.log("Queue index >> ", index)
+        queue.add('process-message', message);
+        console.log(`Message ${message} added to ${queueName}`);
+    }
     /**
      * Send a response through the response channel.
      */
@@ -252,7 +316,37 @@ export abstract class HorizontalAdapter extends LocalAdapter {
     /**
      * Send a message to a namespace and channel.
      */
-    send(appId: string, channel: string, data: string, exceptingId: string|null = null): any {
+    async send(appId: string, channel: string, data: string, exceptingId: string | null = null): Promise<any> {
+        // Intercept message here
+        console.log("\nIntercepted message >> \n", JSON.parse(data))
+
+        const keyToCheck = `queue_processor:${appId}`;
+
+        (async () => {
+            try {
+                const exists = await this.redisClient.sismember(keyToCheck, channel);
+                console.log("dtype >> ", typeof exists)
+
+                if (exists === 1) {
+                    console.log(`Key "${keyToCheck}" exists in Redis.`);
+                    const newData = { metaData: { appId, channel, exceptingId }, data: JSON.parse(data) }
+                    this.distributeMessageToQueues(newData)
+                    console.log("Applying custom transformation on message...")
+
+                } else {
+                    console.log(`Key "${keyToCheck}" does not exist in Redis.`);
+                    this.sendToChannels(appId, channel, data, exceptingId)
+                }
+            } catch (error) {
+                console.error('Error checking key existence:', error);
+            }
+        })();
+
+    }
+
+    sendToChannels(appId: string, channel: string, data: string, exceptingId: string | null = null) {
+
+        console.log("Broadcasting to channels ******** It works!!!!!!!!")
         this.broadcastToChannel(this.channel, JSON.stringify({
             uuid: this.uuid,
             appId,
@@ -267,14 +361,14 @@ export abstract class HorizontalAdapter extends LocalAdapter {
     /**
      * Force local sending only for the Horizontal adapter.
      */
-    sendLocally(appId: string, channel: string, data: string, exceptingId: string|null = null): any {
+    sendLocally(appId: string, channel: string, data: string, exceptingId: string | null = null): any {
         super.send(appId, channel, data, exceptingId);
     }
 
     /**
      * Terminate an User ID's connections.
      */
-    terminateUserConnections(appId: string, userId: number|string): void {
+    terminateUserConnections(appId: string, userId: number | string): void {
         new Promise((resolve, reject) => {
             this.getNumSub().then(numSub => {
                 if (numSub <= 1) {
@@ -300,7 +394,7 @@ export abstract class HorizontalAdapter extends LocalAdapter {
     /**
      * Terminate an User ID's local connections.
      */
-    terminateLocalUserConnections(appId: string, userId: number|string): void {
+    terminateLocalUserConnections(appId: string, userId: number | string): void {
         super.terminateUserConnections(appId, userId);
     }
 

@@ -8,6 +8,7 @@ import { PresenceMemberInfo } from '../channels/presence-channel-manager';
 import { RedisAdapter } from './redis-adapter';
 import { Server } from '../server';
 import { WebSocket } from 'uWebSockets.js';
+import { LocalHorizontalAdapter } from './local-horizontal-adapter';
 
 export class Adapter implements AdapterInterface {
     /**
@@ -20,7 +21,8 @@ export class Adapter implements AdapterInterface {
      */
     constructor(server: Server) {
         if (server.options.adapter.driver === 'local') {
-            this.driver = new LocalAdapter(server);
+            // this.driver = new LocalAdapter(server);
+            this.driver = new LocalHorizontalAdapter(server);
         } else if (server.options.adapter.driver === 'redis') {
             this.driver = new RedisAdapter(server);
         } else if (server.options.adapter.driver === 'nats') {
@@ -149,7 +151,7 @@ export class Adapter implements AdapterInterface {
     /**
      * Send a message to a namespace and channel.
      */
-    send(appId: string, channel: string, data: string, exceptingId: string|null = null): void {
+    async send(appId: string, channel: string, data: string, exceptingId: string|null = null): Promise<void> {
         return this.driver.send(appId, channel, data, exceptingId);
     }
 

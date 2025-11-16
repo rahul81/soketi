@@ -35,7 +35,7 @@ export class HttpHandler {
             if (this.server.closing) {
                 this.serverErrorResponse(res, 'The server is closing. Choose another server. :)');
             } else {
-                this.send(res, 'OK');
+                this.send(res, 'Hello MF !! from pinger-keti jingling at 6001');
             }
         });
     }
@@ -80,7 +80,7 @@ export class HttpHandler {
             this.corkMiddleware,
             this.corsMiddleware,
         ]).then(res => {
-            this.send(res, 'OK');
+            this.send(res, 'Hello MF !! from pinger-keti jingling at 6001');
         });
     }
 
@@ -273,6 +273,7 @@ export class HttpHandler {
             this.broadcastEventRateLimitingMiddleware,
         ]).then(res => {
             this.checkMessageToBroadcast(res.body as PusherApiMessage, res.app as App).then(message => {
+                // intercept on event messages here
                 this.broadcastMessage(message, res.app.id);
                 this.server.metricsManager.markApiMessage(res.app.id, res.body, { ok: true });
                 this.sendJson(res, { ok: true });
@@ -375,14 +376,15 @@ export class HttpHandler {
     }
 
     protected broadcastMessage(message: PusherApiMessage, appId: string): void {
-        message.channels.forEach(channel => {
+        console.log("App id from http handler >> ", appId)
+        message.channels.forEach(async channel => {
             let msg = {
                 event: message.name,
                 channel,
                 data: message.data,
             };
 
-            this.server.adapter.send(appId, channel, JSON.stringify(msg), message.socket_id);
+            await this.server.adapter.send(appId, channel, JSON.stringify(msg), message.socket_id);
 
             if (Utils.isCachingChannel(channel)) {
                 this.server.cacheManager.set(
