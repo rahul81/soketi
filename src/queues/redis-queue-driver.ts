@@ -45,7 +45,7 @@ export class RedisQueueDriver implements QueueInterface {
     processQueue(queueName: string, callback: CallableFunction): Promise<void> {
         return new Promise(resolve => {
             if (!this.queueWithWorker.has(queueName)) {
-                let redisOptions: RedisOptions|ClusterOptions = {
+                let redisOptions: RedisOptions | ClusterOptions = {
                     maxRetriesPerRequest: null,
                     enableReadyCheck: false,
                     ...this.server.options.database.redis,
@@ -61,7 +61,7 @@ export class RedisQueueDriver implements QueueInterface {
                 const queueSharedOptions = {
                     // We remove a trailing `:` from the prefix because BullMQ adds that already
                     prefix: this.server.options.database.redis.keyPrefix.replace(/:$/, ''),
-                    connection,
+                    connection: connection as any,
                 };
 
                 this.queueWithWorker.set(queueName, {

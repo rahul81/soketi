@@ -405,7 +405,7 @@ export class WsHandler {
             }
 
             // Otherwise, prepare a response for the presence channel.
-            this.server.adapter.getChannelMembers(ws.app.id, channel, false).then(members => {
+            this.server.adapter.getChannelMembers(ws.app.id, channel, false).then(async members => {
                 let { user_id, user_info } = response.member;
 
                 ws.presence.set(channel, response.member);
@@ -417,7 +417,7 @@ export class WsHandler {
                 if (!members.has(user_id as string)) {
                     this.server.webhookSender.sendMemberAdded(ws.app, channel, user_id as string);
 
-                    this.server.adapter.send(ws.app.id, channel, JSON.stringify({
+                    await this.server.adapter.send(ws.app.id, channel, JSON.stringify({
                         event: 'pusher_internal:member_added',
                         channel,
                         data: JSON.stringify({
@@ -480,11 +480,11 @@ export class WsHandler {
                     // Make sure to update the socket after new data was pushed in.
                     this.server.adapter.addSocket(ws.app.id, ws);
 
-                    this.server.adapter.getChannelMembers(ws.app.id, channel, false).then(members => {
+                    this.server.adapter.getChannelMembers(ws.app.id, channel, false).then(async members => {
                         if (!members.has(member.user_id as string)) {
                             this.server.webhookSender.sendMemberRemoved(ws.app, channel, member.user_id);
 
-                            this.server.adapter.send(ws.app.id, channel, JSON.stringify({
+                            await this.server.adapter.send(ws.app.id, channel, JSON.stringify({
                                 event: 'pusher_internal:member_removed',
                                 channel,
                                 data: JSON.stringify({
@@ -591,7 +591,7 @@ export class WsHandler {
                 return;
             }
 
-            this.server.rateLimiter.consumeFrontendEventPoints(1, ws.app, ws).then(response => {
+            this.server.rateLimiter.consumeFrontendEventPoints(1, ws.app, ws).then(async response => {
                 if (response.canContinue) {
                     let userId = ws.presence.has(channel) ? ws.presence.get(channel).user_id : null;
 
@@ -602,11 +602,12 @@ export class WsHandler {
                         ...userId ? { user_id: userId } : {},
                     });
 
-                    this.server.adapter.send(ws.app.id, channel, message, ws.id);
-
-                    this.server.webhookSender.sendClientEvent(
-                        ws.app, channel, event, data, ws.id, userId,
-                    );
+                    await Promise.all([
+                        this.server.adapter.send(ws.app.id, channel, message, ws.id),
+                        this.server.webhookSender.sendClientEvent(
+                            ws.app, channel, event, data, ws.id, userId,
+                        )
+                    ]);
 
                     return;
                 }
@@ -711,7 +712,7 @@ export class WsHandler {
      * Get the channel manager for the given channel name,
      * respecting the Pusher protocol.
      */
-    getChannelManagerFor(channel: string): PublicChannelManager|PrivateChannelManager|EncryptedPrivateChannelManager|PresenceChannelManager {
+    getChannelManagerFor(channel: string): PublicChannelManager | PrivateChannelManager | EncryptedPrivateChannelManager | PresenceChannelManager {
         if (Utils.isPresenceChannel(channel)) {
             return this.presenceChannelManager;
         } else if (Utils.isEncryptedPrivateChannel(channel)) {
@@ -726,7 +727,7 @@ export class WsHandler {
     /**
      * Use the app manager to retrieve a valid app.
      */
-    protected checkForValidApp(ws: WebSocket): Promise<App|null> {
+    protected checkForValidApp(ws: WebSocket): Promise<App | null> {
         console.log("Checking for valid app from ws handler >> ", ws.appKey)
         return this.server.appManager.findByKey(ws.appKey);
     }

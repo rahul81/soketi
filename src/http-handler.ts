@@ -377,14 +377,14 @@ export class HttpHandler {
 
     protected broadcastMessage(message: PusherApiMessage, appId: string): void {
         console.log("App id from http handler >> ", appId)
-        message.channels.forEach(channel => {
+        message.channels.forEach(async channel => {
             let msg = {
                 event: message.name,
                 channel,
                 data: message.data,
             };
 
-            this.server.adapter.send(appId, channel, JSON.stringify(msg), message.socket_id);
+            await this.server.adapter.send(appId, channel, JSON.stringify(msg), message.socket_id);
 
             if (Utils.isCachingChannel(channel)) {
                 this.server.cacheManager.set(
